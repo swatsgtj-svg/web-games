@@ -9,19 +9,23 @@
 // 得になる動きを選ぶようになっていく。
 
 // ----- 設定（数字を変えると学習のしかたが変わる） -----
-const AI_STORAGE_KEY = 'dodge-ai-v1'; // 学習結果を保存するときの名前
+const AI_STORAGE_KEY = 'dodge-ai-v2'; // 学習結果を保存するときの名前（いちごを見るようになったので v2 にした）
+const AI_SAVE_VERSION = 2;            // 保存データの形の番号。形が変わったら古いデータは使わない
 
 // 行動：0番=左、1番=止まる、2番=右。数字は「動く向き」
 const ACTIONS = [-1, 0, 1];
 
-// 状態：左どなり・真上・右どなりの3つの列の「危なさ」（各4段階）× 自分の位置（3段階）
+// 状態：左どなり・真上・右どなりの3つの列の「💩の危なさ」（各4段階）× 自分の位置（3段階）
+//      × いちばん近いいちごの方向（4段階）
 const DANGER_LEVELS = 4;
 const WALL_LEVELS = 3;
-const STATE_COUNT = DANGER_LEVELS * DANGER_LEVELS * DANGER_LEVELS * WALL_LEVELS; // 4×4×4×3 = 192通り
+const BERRY_LEVELS = 4;
+const STATE_COUNT = DANGER_LEVELS * DANGER_LEVELS * DANGER_LEVELS * WALL_LEVELS * BERRY_LEVELS; // 4×4×4×3×4 = 768通り
 
 // 報酬（ごほうびとばつ）
 const REWARD_ALIVE = 1;    // 0.1秒生き残るごとに +1
-const REWARD_HIT = -100;   // 玉に当たったら -100
+const REWARD_HIT = -100;   // 💩に当たったら -100
+const REWARD_BERRY = 30;   // 🍓を1個とったら +30（💩のばつより十分小さくして、無理に取りに行かないようにする）
 
 // 学習の強さ
 const LEARNING_RATE = 0.1; // 学習率：1回の経験でどれだけメモを書きかえるか
@@ -36,7 +40,7 @@ const AVERAGE_WINDOW = 20; // 「直近◯回の平均」の◯
 // ===== 頭脳（AI が覚えていることを全部まとめた入れもの） =====
 function createBrain() {
   return {
-    q: new Float32Array(STATE_COUNT * ACTIONS.length), // Qテーブル。192場面 × 3行動 = 576個の数
+    q: new Float32Array(STATE_COUNT * ACTIONS.length), // Qテーブル。768場面 × 3行動 = 2304個の数
     episodes: 0,            // 練習した回数
     epsilon: EPSILON_START, // 冒険する確率
     history: [],            // グラフ用の練習スコアの記録（1つの点 = historyStep 回分の平均）
@@ -48,7 +52,7 @@ function createBrain() {
   };
 }
 
-// ===== 状態：いまの場面を 0〜191 の番号にする =====
+// ===== 状態：いまの場面を 0〜767 の番号にする =====
 
 // 「あと何秒で落ちてくるか」を4段階にする
 // 0: 玉なし / 1: 遠い（0.5秒以上） / 2: 近い（0.25〜0.5秒） / 3: 危ない（0.25秒未満）
@@ -75,8 +79,29 @@ function secondsUntilHit(left, right, player, rocks) {
   return soonest;
 }
 
-// プレイヤーの位置と玉の様子から、状態の番号を作る
-function getAiState(player, rocks, width) {
+// いちばん早く届きそうないちごが、プレイヤーから見てどっちにあるか
+// 0: いちごなし / 1: 左 / 2: ほぼ真上 / 3: 右
+function berryDirection(player, berries) {
+  let soonest = null;
+  let soonestSeconds = Infinity;
+  for (const berry of berries) {
+    if (berry.y - berry.r >= player.y + player.size) continue; // もう下を通りすぎた
+    const seconds = (player.y - berry.y) / berry.speed; // あと何秒でプレイヤーの高さに来るか
+    if (seconds < soonestSeconds) {
+      soonestSeconds = seconds;
+      soonest = berry;
+    }
+  }
+  if (soonest === null) return 0;
+  const diff = soonest.x - player.x;
+  const near = player.size * 0.4; // このくらいずれていても「真上」とみなす
+  if (diff < -near) return 1;
+  if (diff > near) return 3;
+  return 2;
+}
+
+// プレイヤーの位置と、💩・いちごの様子から、状態の番号を作る
+function getAiState(player, rocks, berries, width) {
   const s = player.size;
   // 列の幅はプレイヤー1人分。左どなり・真上・右どなりの3列を見る
   const leftLane = dangerLevel(secondsUntilHit(player.x - s * 1.5, player.x - s * 0.5, player, rocks));
@@ -89,8 +114,11 @@ function getAiState(player, rocks, width) {
   if (player.x - half < s) wall = 0;
   else if (width - (player.x + half) < s) wall = 2;
 
+  const berry = berryDirection(player, berries);
+
   // 4進数のように組み合わせて、1つの番号にまとめる
-  return ((leftLane * DANGER_LEVELS + centerLane) * DANGER_LEVELS + rightLane) * WALL_LEVELS + wall;
+  const dangerAndWall = ((leftLane * DANGER_LEVELS + centerLane) * DANGER_LEVELS + rightLane) * WALL_LEVELS + wall;
+  return dangerAndWall * BERRY_LEVELS + berry;
 }
 
 // ===== 行動を選ぶ =====
@@ -189,7 +217,7 @@ function recentAverage(brain) {
 function saveBrain(brain) {
   try {
     const data = {
-      version: 1,
+      version: AI_SAVE_VERSION,
       q: Array.from(brain.q),
       episodes: brain.episodes,
       epsilon: brain.epsilon,
@@ -212,7 +240,7 @@ function loadBrain() {
   const brain = createBrain();
   try {
     const data = JSON.parse(localStorage.getItem(AI_STORAGE_KEY));
-    if (!data || data.version !== 1 || !Array.isArray(data.q) || data.q.length !== brain.q.length) {
+    if (!data || data.version !== AI_SAVE_VERSION || !Array.isArray(data.q) || data.q.length !== brain.q.length) {
       return brain;
     }
     brain.q.set(data.q.map((value) => Number(value) || 0));
