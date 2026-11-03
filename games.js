@@ -21,4 +21,10 @@ const GAMES = [
     description: '上から落ちてくるものを左右に動いてよけよう。長く生き残るほど高得点！',
     path: 'dodge/index.html',
   },
+  {
+    icon: '🃏',
+    title: '神経衰弱',
+    description: 'カードをめくって同じ絵をそろえよう。動物・乗り物・食べもののほか、自分の写真でも遊べる！',
+    path: 'memory/index.html',
+  },
 ];
