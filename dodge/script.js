@@ -1,12 +1,17 @@
 // ===== よけるゲーム =====
-// 画面の下のプレイヤーを左右に動かして、上から落ちてくる玉をよけるゲーム。
-// 長く生き残るほどスコアが上がり、玉の速さと数がだんだん増える。
+// 画面の下のプレイヤー（😀）を左右に動かして、上から落ちてくる💩をよけるゲーム。
+// 長く生き残るほどスコアが上がり、💩の速さと数がだんだん増える。
+// ときどき落ちてくる🍓いちごをとると、ボーナス点がもらえる。
 // 「自分で遊ぶ」モードと、AI が練習する「AIモード」がある（AIの頭脳は ai.js）。
 
 // ----- 設定（数字を変えると遊びごこちが変わる） -----
 const STORAGE_KEY = 'dodge-high-score'; // ハイスコアを保存するときの名前
 const SCORE_PER_SECOND = 10;            // 1秒生き残るごとに増えるスコア
 const MAX_DT = 0.05;                    // 1回の計算で進める時間の上限（秒）。タブを戻したときのワープ防止
+const BERRY_SCORE = 50;                 // いちご1個でもらえるスコア
+const BERRY_INTERVAL_MIN = 2;           // いちごが出てくる間かく（秒）の最小
+const BERRY_INTERVAL_MAX = 4;           // いちごが出てくる間かく（秒）の最大
+const POPUP_TIME = 0.8;                 // 「+50」の文字を表示する秒数
 
 // ----- AIモードの設定 -----
 const AI_WORLD_WIDTH = 360;   // AI が練習する「仮想の画面」の幅。画面サイズが違っても学習結果を同じに使えるように固定
@@ -67,7 +72,12 @@ let viewX = 0;
 let viewY = 0;
 
 const player = { x: 0, y: 0, size: 0 }; // x は真ん中の位置
-let rocks = [];                          // 落ちてくる玉の一覧 { x, y, r, speed }
+let rocks = [];                          // 落ちてくる💩の一覧 { x, y, r, speed }
+let berries = [];                        // 落ちてくるいちごの一覧 { x, y, r, speed }
+let berryTimer = 0;                      // 次のいちごを出すまでの残り時間（秒）
+let bonus = 0;                           // いちごでもらったスコアの合計
+let berriesCaught = 0;                   // さっきの計算でとったいちごの数（AIのごほうび用）
+let popups = [];                         // 「+50」の文字の一覧 { x, y, time }
 
 // ----- AIモードの状態 -----
 let brain = loadBrain();   // AI の頭脳（保存したものがあれば続きから）
@@ -76,6 +86,7 @@ let aiTesting = false;     // 本番モードか（冒険しない・学習し�
 let aiTick = 0;            // 今回の挑戦で何きざみ進んだか
 let aiPrev = null;         // 前に選んだ { state: 状態, action: 行動 }
 let aiMove = 0;            // いま動いている向き（-1, 0, 1）
+let aiReward = 0;          // 前に行動を選んでから、いちごでもらったごほうびの合計
 let aiTimeBank = 0;        // まだ計算していない時間（早送り用のためておく時間）
 let aiCrashPause = 0;      // 当たった様子を見せる残り時間
 let chartDirty = true;     // グラフを描き直す必要があるか
@@ -141,9 +152,9 @@ function setWorldSize(newWidth, newHeight) {
   if (oldWidth > 0) {
     // 遊んでいる途中で画面の大きさが変わったら、位置も同じ割合でのばす
     player.x = (player.x / oldWidth) * width;
-    for (const rock of rocks) {
-      rock.x = (rock.x / oldWidth) * width;
-      rock.y = (rock.y / oldHeight) * height;
+    for (const thing of rocks.concat(berries)) {
+      thing.x = (thing.x / oldWidth) * width;
+      thing.y = (thing.y / oldHeight) * height;
     }
   } else {
     player.x = width / 2;
@@ -271,7 +282,7 @@ function spawnInterval() {
   return Math.max(0.9 - elapsed * 0.02, 0.18); // 次の玉が出るまでの秒数
 }
 
-// 上から新しい玉を1つ出す
+// 上から新しい💩を1つ出す
 function spawnRock() {
   const r = player.size * (0.3 + Math.random() * 0.35); // 半径はランダム
   rocks.push({
@@ -282,8 +293,24 @@ function spawnRock() {
   });
 }
 
+// 上から新しいいちごを1つ出す。💩より少しゆっくり落ちるので、取りに行きやすい
+function spawnBerry() {
+  const r = player.size * 0.4;
+  berries.push({
+    x: r + Math.random() * (width - r * 2),
+    y: -r,
+    r: r,
+    speed: fallSpeed() * 0.75,
+  });
+}
+
+// 次のいちごが出るまでの秒数（2〜4秒のあいだでランダム）
+function berryInterval() {
+  return BERRY_INTERVAL_MIN + Math.random() * (BERRY_INTERVAL_MAX - BERRY_INTERVAL_MIN);
+}
+
 // ===== 当たり判定 =====
-// 玉（円）とプレイヤー（四角）が重なっているかを調べる。
+// 💩やいちご（円）とプレイヤー（四角）が重なっているかを調べる。
 // 見た目より少し小さめにして、「当たってないのに！」を減らす。
 function hits(rock) {
   const half = player.size / 2 * 0.85;
@@ -305,7 +332,7 @@ function playerMaxSpeed() {
   return width * 1.1;
 }
 
-// 玉を出したり落としたりして、時間を dt 秒すすめる。玉に当たったら true を返す
+// 💩やいちごを出したり落としたりして、時間を dt 秒すすめる。💩に当たったら true を返す
 function stepWorld(dt) {
   elapsed += dt;
 
@@ -322,19 +349,53 @@ function stepWorld(dt) {
   }
   rocks = rocks.filter((rock) => rock.y - rock.r < height);
 
+  // 時間が来たらいちごを出す
+  berryTimer -= dt;
+  if (berryTimer <= 0) {
+    spawnBerry();
+    berryTimer += berryInterval();
+  }
+
+  // いちごを落とす。プレイヤーに当たったら、とったことにしてボーナス点
+  berriesCaught = 0;
+  for (const berry of berries) {
+    berry.y += berry.speed * dt;
+    if (hits(berry)) {
+      berry.caught = true;
+      berriesCaught += 1;
+      bonus += BERRY_SCORE;
+      popups.push({ x: player.x, y: player.y - player.size * 0.3, time: POPUP_TIME }); // 頭の少し上に出す
+    }
+  }
+  // とったものと、画面の下まで行ったものは消す
+  berries = berries.filter((berry) => !berry.caught && berry.y - berry.r < height);
+
+  // 「+50」の文字は少しずつ上に動いて、時間がたったら消す
+  for (const popup of popups) {
+    popup.time -= dt;
+    popup.y -= height * 0.15 * dt;
+  }
+  popups = popups.filter((popup) => popup.time > 0);
+
   return rocks.some(hits);
 }
 
 // 新しい挑戦のために、世界を最初の状態にもどす
 function resetWorld() {
   rocks = [];
+  berries = [];
+  popups = [];
+  bonus = 0;
+  berriesCaught = 0;
   elapsed = 0;
   spawnTimer = 0.5;
+  berryTimer = 1.5;
   player.x = width / 2;
 }
 
 function currentScore() {
-  return Math.floor(elapsed * SCORE_PER_SECOND);
+  // 生き残った時間の点 ＋ いちごのボーナス
+  return Math.floor(elapsed * SCORE_PER_SECOND) + bonus;
 }
 
 // ===== 自分で遊ぶモード =====
@@ -434,6 +495,7 @@ function resetAiEpisode() {
   aiTick = 0;
   aiPrev = null;
   aiMove = 0;
+  aiReward = 0;
   aiCrashPause = 0;
 }
 
@@ -441,11 +503,13 @@ function resetAiEpisode() {
 function aiStep() {
   // 0.1秒ごとに「いまの場面」を見て、行動を選ぶ
   if (aiTick % AI_DECIDE_EVERY === 0) {
-    const state = getAiState(player, rocks, width);
-    // 前の行動のあと 0.1秒 生き残れたので、ごほうび +1 で表を書きかえる（本番では書きかえない）
+    const state = getAiState(player, rocks, berries, width);
+    // 前の行動のあと 0.1秒 生き残れたので、ごほうび +1（いちごをとっていたらさらに追加）で表を書きかえる
+    // （本番では書きかえない）
     if (!aiTesting && aiPrev) {
-      learn(brain, aiPrev.state, aiPrev.action, REWARD_ALIVE, state);
+      learn(brain, aiPrev.state, aiPrev.action, REWARD_ALIVE + aiReward, state);
     }
+    aiReward = 0;
     const action = chooseAction(brain, state, aiTesting);
     aiPrev = { state: state, action: action };
     aiMove = ACTIONS[action];
@@ -457,6 +521,7 @@ function aiStep() {
   clampPlayer();
 
   const hit = stepWorld(AI_STEP);
+  aiReward += berriesCaught * REWARD_BERRY; // いちごをとったら、ごほうびをためておく
   if (hit) {
     // 当たった！ ばつ -100 で表を書きかえる
     if (!aiTesting) {
@@ -644,34 +709,38 @@ function draw(crashed = false) {
   ctx.fillStyle = '#5b6b82';
   ctx.fillRect(0, player.y + player.size, width, 2);
 
-  // 落ちてくる玉
+  // 落ちてくる💩
   for (const rock of rocks) {
-    ctx.beginPath();
-    ctx.arc(rock.x, rock.y, rock.r, 0, Math.PI * 2);
-    ctx.fillStyle = '#f2994a';
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(rock.x - rock.r * 0.3, rock.y - rock.r * 0.3, rock.r * 0.3, 0, Math.PI * 2);
-    ctx.fillStyle = '#f8c48f'; // 光っている部分
-    ctx.fill();
+    drawEmoji('💩', rock.x, rock.y, rock.r * 2.2);
   }
 
-  // プレイヤー（角の丸い四角に目を2つ）。AIモードでは緑色
-  const s = player.size;
-  const left = player.x - s / 2;
-  ctx.fillStyle = crashed ? '#e4572f' : (mode === 'ai' ? '#27a96b' : '#2f6fe4');
-  ctx.beginPath();
-  if (ctx.roundRect) {
-    ctx.roundRect(left, player.y, s, s, s * 0.25);
-  } else {
-    ctx.rect(left, player.y, s, s); // 古いブラウザでは普通の四角にする
+  // 落ちてくるいちご
+  for (const berry of berries) {
+    drawEmoji('🍓', berry.x, berry.y, berry.r * 2.2);
   }
-  ctx.fill();
-  ctx.fillStyle = '#fff';
-  ctx.beginPath();
-  ctx.arc(left + s * 0.32, player.y + s * 0.4, s * 0.1, 0, Math.PI * 2);
-  ctx.arc(left + s * 0.68, player.y + s * 0.4, s * 0.1, 0, Math.PI * 2);
-  ctx.fill();
+
+  // プレイヤー（人間の顔）。AIモードでは足もとに緑のかげを出して、AIだとわかるようにする
+  const s = player.size;
+  const cy = player.y + s / 2; // 顔の真ん中の高さ
+  if (mode === 'ai') {
+    ctx.fillStyle = 'rgba(39, 169, 107, 0.8)';
+    ctx.beginPath();
+    ctx.ellipse(player.x, player.y + s, s * 0.45, s * 0.12, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // 💩に当たったときは、目を回した顔にする
+  drawEmoji(crashed ? '😵' : '😀', player.x, cy, s * 1.1);
+
+  // いちごをとったときの「+50」
+  ctx.font = `bold ${Math.round(s * 0.5)}px system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  for (const popup of popups) {
+    ctx.globalAlpha = popup.time / POPUP_TIME; // 時間がたつほど薄くなる（1 = はっきり、0 = 見えない）
+    ctx.fillStyle = '#ffd84d';
+    ctx.fillText(`+${BERRY_SCORE}`, popup.x, popup.y);
+  }
+  ctx.globalAlpha = 1;
 
   // AIモード：左上に「何回目の練習か」、右上にスコアを書く
   if (mode === 'ai') {
@@ -683,6 +752,15 @@ function draw(crashed = false) {
     ctx.textAlign = 'right';
     ctx.fillText(String(currentScore()), width - 12, 12);
   }
+}
+
+// 絵文字を、(x, y) が真ん中になるように size の大きさで描く
+function drawEmoji(emoji, x, y, size) {
+  ctx.font = `${Math.round(size)}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#fff';
+  ctx.fillText(emoji, x, y);
 }
 
 // ===== はじめの準備 =====

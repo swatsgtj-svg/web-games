@@ -16,9 +16,9 @@ const GAMES = [
     path: 'number-guess/index.html',
   },
   {
-    icon: '☄️',
+    icon: '💩',
     title: 'よけるゲーム',
-    description: '上から落ちてくるものを左右に動いてよけよう。長く生き残るほど高得点！AIが練習して上手くなる様子も見られる。',
+    description: '上から落ちてくる💩を左右に動いてよけよう。🍓いちごをとるとボーナス！長く生き残るほど高得点！AIが練習して上手くなる様子も見られる。',
     path: 'dodge/index.html',
   },
   {
