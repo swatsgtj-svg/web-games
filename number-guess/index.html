@@ -55,7 +55,14 @@
         <div><dt>答えのはんい</dt><dd id="range">1〜10</dd></div>
       </dl>
 
-      <p class="history-title">入力した数</p>
+      <div class="history-head">
+        <p class="history-title">入力した数</p>
+        <!-- チップの色の意味の説明 -->
+        <p class="legend">
+          <span class="legend-item"><span class="legend-chip up"></span>小さすぎた</span>
+          <span class="legend-item"><span class="legend-chip down"></span>大きすぎた</span>
+        </p>
+      </div>
       <ol id="history" class="history"></ol>
 
       <button type="button" class="secondary" data-action="back">難易度をえらびなおす</button>

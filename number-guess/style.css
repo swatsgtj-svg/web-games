@@ -158,10 +158,59 @@ button:active {
   font-weight: bold;
 }
 
+/* 「入力した数」の見出しと、色の説明を横に並べる */
+.history-head {
+  display: flex;
+  flex-wrap: wrap;           /* せまい画面で入りきらなければ次の行へ */
+  justify-content: space-between;
+  align-items: center;
+  gap: 4px 12px;
+  margin: 0 0 6px;
+}
+
 .history-title {
-  margin: 0 0 4px;
+  margin: 0;
   font-size: 0.9rem;
   color: #5b6b82;
+}
+
+/* 色の説明（小さめの文字） */
+.legend {
+  display: flex;
+  gap: 12px;
+  margin: 0;
+  font-size: 0.8rem;
+  color: #5b6b82;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* 説明の見本。チップと同じ色の小さな丸 */
+.legend-chip {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+}
+
+/* 小さすぎた数（オレンジ）と大きすぎた数（青）の色。チップと説明の見本で同じ色を使う */
+.up {
+  --chip-border: #f08c4a;
+  --chip-bg: #fff1e6;
+}
+
+.down {
+  --chip-border: #4a9be8;
+  --chip-bg: #e7f2fd;
+}
+
+.legend-chip,
+.history li {
+  border: 2px solid var(--chip-border, #b9c6da);
+  background: var(--chip-bg, #fff);
 }
 
 .history {
@@ -175,13 +224,9 @@ button:active {
 }
 
 .history li {
-  background: #fff;
   border-radius: 999px;
   padding: 2px 12px;
 }
-
-.history li.up   { border: 2px solid #ffc9a8; } /* 小さすぎた数 */
-.history li.down { border: 2px solid #a5d0f7; } /* 大きすぎた数 */
 
 #screen-play > .secondary {
   width: 100%;
