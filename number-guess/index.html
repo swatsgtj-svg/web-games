@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <!-- スマホの画面幅に合わせて表示するための設定 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>数当てゲーム</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="card">
+    <h1>数当てゲーム</h1>
+
+    <!-- ① 難易度えらびの画面 -->
+    <section id="screen-select">
+      <p class="lead">難易度をえらんでね</p>
+      <div class="level-list">
+        <button type="button" class="level-button" data-level="easy">
+          <span class="level-name">かんたん</span>
+          <span class="level-range">1〜10</span>
+          <span class="level-best" data-best="easy">記録なし</span>
+        </button>
+        <button type="button" class="level-button" data-level="normal">
+          <span class="level-name">ふつう</span>
+          <span class="level-range">1〜100</span>
+          <span class="level-best" data-best="normal">記録なし</span>
+        </button>
+        <button type="button" class="level-button" data-level="hard">
+          <span class="level-name">むずかしい</span>
+          <span class="level-range">1〜1000</span>
+          <span class="level-best" data-best="hard">記録なし</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ② ゲーム中の画面（最初はかくしておく） -->
+    <section id="screen-play" hidden>
+      <p class="lead" id="play-question">1〜10 の数を当ててね</p>
+
+      <form id="guess-form" autocomplete="off">
+        <input
+          type="number"
+          id="guess-input"
+          inputmode="numeric"
+          placeholder="数を入力"
+          aria-label="予想する数"
+        >
+        <button type="submit" class="primary">こたえる</button>
+      </form>
+
+      <p id="hint" class="hint" aria-live="polite"></p>
+
+      <dl class="status">
+        <div><dt>回数</dt><dd id="count">0回</dd></div>
+        <div><dt>答えのはんい</dt><dd id="range">1〜10</dd></div>
+      </dl>
+
+      <div class="history-head">
+        <p class="history-title">入力した数</p>
+        <!-- チップの色の意味の説明 -->
+        <p class="legend">
+          <span class="legend-item"><span class="legend-chip up"></span>小さすぎた</span>
+          <span class="legend-item"><span class="legend-chip down"></span>大きすぎた</span>
+        </p>
+      </div>
+      <ol id="history" class="history"></ol>
+
+      <button type="button" class="secondary" data-action="back">難易度をえらびなおす</button>
+    </section>
+
+    <!-- ③ 正解の画面（最初はかくしておく） -->
+    <section id="screen-clear" hidden>
+      <p class="clear-title">正解！</p>
+      <p id="clear-message" class="lead"></p>
+      <p id="new-record" class="new-record" hidden>🎉 新記録！</p>
+      <div class="button-row">
+        <button type="button" class="primary" data-action="retry">もう一回</button>
+        <button type="button" class="secondary" data-action="back">難易度をえらびなおす</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>

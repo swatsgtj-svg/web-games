@@ -1,0 +1,256 @@
+/* ===== 全体 ===== */
+* {
+  box-sizing: border-box; /* 幅の計算に余白や枠線をふくめる（はみ出し防止） */
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: #eef3fb;
+  color: #1f2a3c;
+  font-family: system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif;
+  line-height: 1.6;
+}
+
+/* hidden 属性が付いた画面は必ずかくす */
+[hidden] {
+  display: none !important;
+}
+
+/* 真ん中に置くカード。スマホでは画面いっぱい、パソコンでは幅480pxまで */
+.card {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 24px 16px 40px;
+}
+
+h1 {
+  margin: 0 0 16px;
+  text-align: center;
+  font-size: 1.8rem;
+}
+
+.lead {
+  margin: 0 0 16px;
+  text-align: center;
+  font-size: 1.15rem;
+}
+
+/* ===== ボタン共通 ===== */
+button {
+  font: inherit;
+  min-height: 48px;          /* 指で押しやすい高さ */
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  touch-action: manipulation; /* ダブルタップで拡大されないようにする */
+}
+
+button:active {
+  transform: scale(0.97);    /* 押したときに少し小さくして「押した感」を出す */
+}
+
+.primary {
+  background: #2f6fe4;
+  color: #fff;
+  font-weight: bold;
+  padding: 0 20px;
+}
+
+.secondary {
+  background: #fff;
+  color: #2f6fe4;
+  border: 2px solid #2f6fe4;
+  padding: 0 16px;
+}
+
+/* ===== ① 難易度えらび ===== */
+.level-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.level-button {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 2px 12px;
+  padding: 14px 18px;
+  background: #fff;
+  color: inherit;
+  text-align: left;
+  box-shadow: 0 2px 6px rgba(31, 42, 60, 0.12);
+}
+
+.level-name {
+  font-size: 1.25rem;
+  font-weight: bold;
+}
+
+.level-range {
+  color: #5b6b82;
+}
+
+.level-best {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  font-size: 0.95rem;
+  color: #2f6fe4;
+  font-weight: bold;
+}
+
+/* ===== ② ゲーム中 ===== */
+#guess-form {
+  display: flex;
+  gap: 8px;
+}
+
+#guess-input {
+  flex: 1;
+  min-width: 0;              /* 小さい画面で入力欄がはみ出さないようにする */
+  font-size: 1.4rem;         /* 16px以上にすると iPhone で勝手に拡大されない */
+  padding: 8px 12px;
+  border: 2px solid #b9c6da;
+  border-radius: 12px;
+  text-align: center;
+}
+
+#guess-input:focus {
+  outline: none;
+  border-color: #2f6fe4;
+}
+
+.hint {
+  min-height: 2.2em;
+  margin: 16px 0;
+  text-align: center;
+  font-size: 1.4rem;
+  font-weight: bold;
+}
+
+.hint.up    { color: #d9480f; } /* もっと大きい */
+.hint.down  { color: #1c7ed6; } /* もっと小さい */
+.hint.error { color: #868e96; font-size: 1rem; } /* 入力のまちがい */
+
+.status {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 16px;
+}
+
+.status div {
+  flex: 1;
+  background: #fff;
+  border-radius: 12px;
+  padding: 8px;
+  text-align: center;
+}
+
+.status dt {
+  font-size: 0.85rem;
+  color: #5b6b82;
+}
+
+.status dd {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+/* 「入力した数」の見出しと、色の説明を横に並べる */
+.history-head {
+  display: flex;
+  flex-wrap: wrap;           /* せまい画面で入りきらなければ次の行へ */
+  justify-content: space-between;
+  align-items: center;
+  gap: 4px 12px;
+  margin: 0 0 6px;
+}
+
+.history-title {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #5b6b82;
+}
+
+/* 色の説明（小さめの文字） */
+.legend {
+  display: flex;
+  gap: 12px;
+  margin: 0;
+  font-size: 0.8rem;
+  color: #5b6b82;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* 説明の見本。チップと同じ色の小さな丸 */
+.legend-chip {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+}
+
+/* 小さすぎた数（オレンジ）と大きすぎた数（青）の色。チップと説明の見本で同じ色を使う */
+.up {
+  --chip-border: #f08c4a;
+  --chip-bg: #fff1e6;
+}
+
+.down {
+  --chip-border: #4a9be8;
+  --chip-bg: #e7f2fd;
+}
+
+.legend-chip,
+.history li {
+  border: 2px solid var(--chip-border, #b9c6da);
+  background: var(--chip-bg, #fff);
+}
+
+.history {
+  display: flex;
+  flex-wrap: wrap;           /* 入りきらなければ次の行へ */
+  gap: 6px;
+  list-style: none;
+  margin: 0 0 24px;
+  padding: 0;
+  min-height: 2em;
+}
+
+.history li {
+  border-radius: 999px;
+  padding: 2px 12px;
+}
+
+#screen-play > .secondary {
+  width: 100%;
+}
+
+/* ===== ③ 正解 ===== */
+.clear-title {
+  margin: 8px 0;
+  text-align: center;
+  font-size: 2.4rem;
+  font-weight: bold;
+  color: #2b8a3e;
+}
+
+.new-record {
+  margin: 0 0 16px;
+  text-align: center;
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: #e67700;
+}
+
+.button-row {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
