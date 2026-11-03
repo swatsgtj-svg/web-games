@@ -27,7 +27,7 @@
       <section class="overlay" id="screen-start">
         <p class="overlay-title">落ちてくるものをよけよう！</p>
         <ul class="howto">
-          <li>📱 スマホ：画面の<strong>左半分</strong>か<strong>右半分</strong>を押しつづける</li>
+          <li>📱 スマホ：動かしたい所を<strong>指でさわる</strong>（指についてくる）</li>
           <li>💻 パソコン：<strong>← →</strong> キー</li>
         </ul>
         <button type="button" class="primary" id="start-button">スタート</button>
@@ -40,6 +40,12 @@
         <p id="new-record" class="new-record" hidden>🎉 ハイスコア更新！</p>
         <button type="button" class="primary" id="retry-button">もう一回</button>
       </section>
+
+      <!-- ③ 一時停止画面（最初はかくしておく）。画面全体がボタンになっていて、どこをタップしても再開する -->
+      <button type="button" class="overlay pause-overlay" id="screen-pause" hidden>
+        <span class="overlay-title">一時停止中</span>
+        <span class="pause-hint">タップで再開</span>
+      </button>
     </div>
   </main>
 

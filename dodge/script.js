@@ -17,11 +17,13 @@ const screenStart   = document.getElementById('screen-start');
 const screenOver    = document.getElementById('screen-over');
 const finalScore    = document.getElementById('final-score');
 const newRecordText = document.getElementById('new-record');
+const screenPause   = document.getElementById('screen-pause');
 
 // ----- ゲームの状態 -----
 let width = 0;        // ゲーム画面の幅（px）
 let height = 0;       // ゲーム画面の高さ（px）
 let playing = false;  // いま遊んでいる最中か
+let paused = false;   // 一時停止しているか
 let elapsed = 0;      // ゲーム開始からの時間（秒）
 let spawnTimer = 0;   // 次の玉を出すまでの残り時間（秒）
 let lastTime = 0;     // 前回の計算をした時刻
@@ -89,9 +91,10 @@ function clampPlayer() {
 }
 
 // ===== 操作 =====
-// 左右どちらに動かしたいかを、キーボードとタッチでそれぞれ覚えておく
+// キーボードは「どのキーが押されているか」、タッチは「指がどこにあるか」を覚えておく
 const keys = { left: false, right: false };
-const pointers = new Map(); // 押している指（またはマウス）ごとの「左 = -1 / 右 = 1」
+let targetX = null;        // 指（またはマウス）の横の位置。さわっていないときは null（なにもない）
+let activePointer = null;  // いまプレイヤーを動かしている指の番号
 
 // パソコン：矢印キー（A / D キーでもOK）
 window.addEventListener('keydown', (event) => {
@@ -105,51 +108,89 @@ window.addEventListener('keyup', (event) => {
   if (event.key === 'ArrowRight' || event.key === 'd') keys.right = false;
 });
 
-// 別のアプリに切りかえたときなど、キーを離したことが伝わらない場合に備えてリセット
-window.addEventListener('blur', () => {
+// キーや指の状態を「なにも押していない」にもどす
+function resetInput() {
   keys.left = false;
   keys.right = false;
-  pointers.clear();
-});
+  targetX = null;
+  activePointer = null;
+}
 
-// スマホ：画面の左半分を押していたら左、右半分なら右（マウスでクリックしても同じ）
+// スマホ：指を置いた位置に向かってプレイヤーが動く（マウスで押しても同じ）
 // 「pointer」は、指・マウス・ペンをまとめてあつかえるしくみ
-function sideOf(event) {
+function pointerX(event) {
   const rect = canvas.getBoundingClientRect();
-  return event.clientX - rect.left < rect.width / 2 ? -1 : 1;
+  return event.clientX - rect.left; // ゲーム画面の左はしから何pxの所か
 }
 
 canvas.addEventListener('pointerdown', (event) => {
   event.preventDefault();
   canvas.setPointerCapture(event.pointerId); // 指が画面の外に出ても追いかける
-  pointers.set(event.pointerId, sideOf(event));
+  activePointer = event.pointerId;           // あとから置いた指を優先する
+  targetX = pointerX(event);
 });
 
 canvas.addEventListener('pointermove', (event) => {
-  // 押したまま指をすべらせたら、左右を切りかえる
-  if (pointers.has(event.pointerId)) {
-    pointers.set(event.pointerId, sideOf(event));
+  // 押したまま指をすべらせたら、目標の位置も動かす
+  if (event.pointerId === activePointer) {
+    targetX = pointerX(event);
   }
 });
 
 function releasePointer(event) {
-  pointers.delete(event.pointerId);
+  if (event.pointerId === activePointer) {
+    targetX = null;
+    activePointer = null;
+  }
 }
 canvas.addEventListener('pointerup', releasePointer);
 canvas.addEventListener('pointercancel', releasePointer);
 canvas.addEventListener('contextmenu', (event) => event.preventDefault()); // 長押しメニューを出さない
 
-// いま左右どちらに動かすか（-1: 左、0: 止まる、1: 右）
-function inputDirection() {
+// キーボードで、いま左右どちらに動かすか（-1: 左、0: 止まる、1: 右）
+function keyDirection() {
   let dir = 0;
   if (keys.left) dir -= 1;
   if (keys.right) dir += 1;
-  // 指は「最後に押した指」の向きを使う
-  let last = 0;
-  for (const side of pointers.values()) last = side;
-  if (dir === 0) dir = last;
   return dir;
 }
+
+// ===== 一時停止 =====
+// ほかのアプリやタブに切りかえたら止めて、「タップで再開」を出す
+function pause() {
+  if (!playing || paused) return;
+  paused = true;
+  resetInput(); // 切りかえ中に離したキーや指が「押しっぱなし」にならないように
+  screenPause.hidden = false;
+}
+
+function resume() {
+  if (!paused) return;
+  paused = false;
+  screenPause.hidden = true;
+  // 止まっていた時間を計算に入れないように、時計をいまに合わせてから再開する
+  lastTime = performance.now();
+  requestAnimationFrame(loop);
+}
+
+// visibilitychange：タブを切りかえたり、スマホでホーム画面にもどったりすると起きる
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) pause();
+});
+// blur：ブラウザの外（ほかのアプリ）をさわったときに起きる
+window.addEventListener('blur', () => {
+  resetInput();
+  pause();
+});
+
+screenPause.addEventListener('click', resume);
+// パソコンでは Enter キーかスペースキーでも再開できる
+window.addEventListener('keydown', (event) => {
+  if (paused && (event.key === 'Enter' || event.key === ' ')) {
+    event.preventDefault();
+    resume();
+  }
+});
 
 // ===== むずかしさ =====
 // 時間がたつほど玉が速く、出てくる間かくが短くなる（上限・下限あり）
@@ -195,6 +236,8 @@ function startGame() {
   spawnTimer = 0.5;
   player.x = width / 2;
   playing = true;
+  paused = false;
+  resetInput();
   scoreText.textContent = '0';
   screenStart.hidden = true;
   screenOver.hidden = true;
@@ -226,8 +269,16 @@ function currentScore() {
 function update(dt) {
   elapsed += dt;
 
-  // プレイヤーを動かす。速さは「1秒で画面幅の1.1倍」
-  player.x += inputDirection() * width * 1.1 * dt;
+  // プレイヤーを動かす。いちばん速くて「1秒で画面幅の1.1倍」
+  const maxMove = width * 1.1 * dt; // 今回の計算で動ける最大の距離
+  if (targetX !== null) {
+    // 指がある：指の位置に向かって動く。近ければぴったり止まる（瞬間移動はしない）
+    const diff = targetX - player.x;
+    player.x += Math.max(-maxMove, Math.min(maxMove, diff));
+  } else {
+    // 指がない：矢印キーで動く
+    player.x += keyDirection() * maxMove;
+  }
   clampPlayer();
 
   // 時間が来たら新しい玉を出す
@@ -253,12 +304,12 @@ function update(dt) {
 // requestAnimationFrame は「次に画面を書きかえるときに呼んでね」というお願い。
 // 1秒に約60回呼ばれるので、これをくり返すとアニメーションになる。
 function loop(now) {
-  if (!playing) return;
+  if (!playing || paused) return; // 一時停止中はここで止める
   // 端末の速さに関係なく同じスピードになるよう、実際に経った時間で計算する
   const dt = Math.min((now - lastTime) / 1000, MAX_DT);
   lastTime = now;
   update(dt);
-  if (playing) {
+  if (playing && !paused) {
     draw();
     requestAnimationFrame(loop);
   }

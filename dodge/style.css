@@ -147,6 +147,28 @@ h1 {
   color: #2f6fe4;
 }
 
+/* 一時停止画面。全体が1つの大きなボタンなので、ボタンの見た目を消して画面いっぱいにする */
+.pause-overlay {
+  width: 100%;
+  min-height: 0;
+  border-radius: 0;
+  color: inherit;
+  cursor: pointer;
+}
+
+.pause-overlay:active {
+  transform: none;           /* 画面ごと縮まないようにする */
+}
+
+.pause-hint {
+  padding: 10px 28px;
+  border-radius: 12px;
+  background: #2f6fe4;
+  color: #fff;
+  font-size: 1.3rem;
+  font-weight: bold;
+}
+
 .new-record {
   margin: 0;
   font-weight: bold;
