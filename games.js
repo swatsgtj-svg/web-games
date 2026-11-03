@@ -18,7 +18,7 @@ const GAMES = [
   {
     icon: '☄️',
     title: 'よけるゲーム',
-    description: '上から落ちてくるものを左右に動いてよけよう。長く生き残るほど高得点！',
+    description: '上から落ちてくるものを左右に動いてよけよう。長く生き残るほど高得点！AIが練習して上手くなる様子も見られる。',
     path: 'dodge/index.html',
   },
   {

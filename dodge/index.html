@@ -13,8 +13,8 @@
     <a class="home-link" href="../index.html">← ゲーム一覧</a>
     <h1>よけるゲーム</h1>
 
-    <!-- 今のスコアとハイスコア -->
-    <dl class="status">
+    <!-- 今のスコアとハイスコア（人間が遊ぶときだけ表示） -->
+    <dl class="status" id="status">
       <div><dt>スコア</dt><dd id="score">0</dd></div>
       <div><dt>ハイスコア</dt><dd id="high-score">0</dd></div>
     </dl>
@@ -30,7 +30,9 @@
           <li>📱 スマホ：動かしたい所を<strong>指でさわる</strong>（指についてくる）</li>
           <li>💻 パソコン：<strong>← →</strong> キー</li>
         </ul>
-        <button type="button" class="primary" id="start-button">スタート</button>
+        <button type="button" class="primary" id="start-button">自分で遊ぶ</button>
+        <button type="button" class="secondary" id="ai-button">🤖 AIの練習を見る</button>
+        <p class="ai-note" id="ai-note">AIが何度も挑戦して、よけ方を自分で覚えていくよ</p>
       </section>
 
       <!-- ② ゲームオーバー画面（最初はかくしておく） -->
@@ -47,8 +49,52 @@
         <span class="pause-hint">タップで再開</span>
       </button>
     </div>
+
+    <!-- AIパネル（AIモードのときだけ表示） -->
+    <section class="ai-panel" id="ai-panel" hidden>
+      <!-- 早送りボタン。aria-pressed="true" が今選ばれているボタン -->
+      <div class="speed-buttons" role="group" aria-label="早送り">
+        <button type="button" data-speed="1" aria-pressed="true">×1</button>
+        <button type="button" data-speed="10" aria-pressed="false">×10</button>
+        <button type="button" data-speed="100" aria-pressed="false">×100</button>
+        <button type="button" data-speed="max" aria-pressed="false">最速</button>
+      </div>
+
+      <!-- 練習の記録 -->
+      <dl class="ai-stats">
+        <div><dt>練習</dt><dd><span id="ai-episodes">0</span>回</dd></div>
+        <div><dt>今回</dt><dd id="ai-score">0</dd></div>
+        <div><dt>最高</dt><dd id="ai-best">0</dd></div>
+        <div class="wide"><dt>直近20回の平均</dt><dd id="ai-average">0</dd></div>
+        <div class="wide"><dt>冒険する確率（ε）</dt><dd id="ai-epsilon">100%</dd></div>
+      </dl>
+
+      <!-- 成長グラフ -->
+      <div class="chart-box">
+        <canvas id="ai-chart" aria-label="練習スコアの移り変わりのグラフ"></canvas>
+      </div>
+
+      <!-- 本番モードの記録（練習のグラフとは別） -->
+      <dl class="ai-stats test-stats" id="ai-test-stats">
+        <div class="test-title"><dt>本番</dt><dd><span id="ai-test-count">0</span>回</dd></div>
+        <div><dt>最新</dt><dd id="ai-test-last">-</dd></div>
+        <div><dt>最高</dt><dd id="ai-test-best">-</dd></div>
+        <div><dt>平均</dt><dd id="ai-test-average">-</dd></div>
+      </dl>
+
+      <div class="ai-actions">
+        <button type="button" class="test-button" id="ai-test-button" aria-pressed="false">本番モード</button>
+        <button type="button" id="ai-save-button">保存</button>
+        <button type="button" id="ai-reset-button">学習をリセット</button>
+        <button type="button" id="ai-quit-button">やめる</button>
+      </div>
+      <!-- 「保存しました」などのお知らせ。aria-live は読み上げソフトにも知らせる設定 -->
+      <p class="ai-message" id="ai-message" aria-live="polite"></p>
+    </section>
   </main>
 
+  <!-- ai.js（AIの頭脳）を先に読みこんで、script.js（ゲーム本体）から使えるようにする -->
+  <script src="ai.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
