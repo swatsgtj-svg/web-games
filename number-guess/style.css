@@ -24,6 +24,23 @@ body {
   padding: 24px 16px 40px;
 }
 
+/* 一覧ページに戻るリンク。指で押しやすいように高さを44px取る */
+.home-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin: -8px 0 4px;
+  padding: 0 4px;
+  color: #2f6fe4;
+  font-size: 0.95rem;
+  text-decoration: none;
+  touch-action: manipulation;
+}
+
+.home-link:hover {
+  text-decoration: underline;
+}
+
 h1 {
   margin: 0 0 16px;
   text-align: center;
