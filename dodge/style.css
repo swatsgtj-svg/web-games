@@ -1,0 +1,198 @@
+/* ===== 全体 ===== */
+* {
+  box-sizing: border-box; /* 幅の計算に余白や枠線をふくめる（はみ出し防止） */
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: #eef3fb;
+  color: #1f2a3c;
+  font-family: system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif;
+  line-height: 1.6;
+  overflow: hidden;          /* ゲーム中に画面がスクロールしないようにする */
+}
+
+/* hidden 属性が付いた画面は必ずかくす */
+[hidden] {
+  display: none !important;
+}
+
+/* 真ん中に置くカード。スマホでは画面いっぱい、パソコンでは幅480pxまで。
+   高さは画面の高さぴったり（dvh はスマホのアドレスバーを除いた高さ） */
+.card {
+  display: flex;
+  flex-direction: column;
+  max-width: 480px;
+  height: 100vh;
+  height: 100dvh;
+  margin: 0 auto;
+  padding: 16px 16px 16px;
+}
+
+/* 一覧ページに戻るリンク。指で押しやすいように高さを44px取る */
+.home-link {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin: -8px 0 0;
+  padding: 0 4px;
+  color: #2f6fe4;
+  font-size: 0.95rem;
+  text-decoration: none;
+  touch-action: manipulation;
+}
+
+.home-link:hover {
+  text-decoration: underline;
+}
+
+h1 {
+  margin: 0 0 8px;
+  text-align: center;
+  font-size: 1.5rem;
+}
+
+/* ===== スコア表示 ===== */
+.status {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 8px;
+}
+
+.status div {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 6px 12px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(31, 42, 60, 0.12);
+}
+
+.status dt {
+  color: #5b6b82;
+  font-size: 0.9rem;
+}
+
+.status dd {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: bold;
+  font-variant-numeric: tabular-nums; /* 数字の幅をそろえて、ガタガタ動かないようにする */
+}
+
+/* ===== ゲーム画面 ===== */
+/* 残りの高さをぜんぶ使う（flex: 1） */
+.stage {
+  position: relative;        /* 中の overlay をこの上に重ねるための基準 */
+  flex: 1;
+  min-height: 0;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(31, 42, 60, 0.12);
+}
+
+#game {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;        /* タッチしても画面が動いたり拡大したりしないようにする */
+  user-select: none;         /* 長押しで文字選択されないようにする */
+  -webkit-user-select: none;
+  -webkit-touch-callout: none; /* iPhone の長押しメニューを出さない */
+}
+
+/* スタート画面・ゲームオーバー画面。ゲーム画面の上に半透明で重ねる */
+.overlay {
+  position: absolute;
+  inset: 0;                  /* 上下左右ぴったり広げる */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px;
+  background: rgba(238, 243, 251, 0.88);
+  text-align: center;
+}
+
+.overlay-title {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: bold;
+}
+
+.howto {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: #3c4a60;
+}
+
+.final-score {
+  margin: 0;
+  font-size: 1.3rem;
+}
+
+#final-score {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #2f6fe4;
+}
+
+/* 一時停止画面。全体が1つの大きなボタンなので、ボタンの見た目を消して画面いっぱいにする */
+.pause-overlay {
+  width: 100%;
+  min-height: 0;
+  border-radius: 0;
+  color: inherit;
+  cursor: pointer;
+}
+
+.pause-overlay:active {
+  transform: none;           /* 画面ごと縮まないようにする */
+}
+
+.pause-hint {
+  padding: 10px 28px;
+  border-radius: 12px;
+  background: #2f6fe4;
+  color: #fff;
+  font-size: 1.3rem;
+  font-weight: bold;
+}
+
+.new-record {
+  margin: 0;
+  font-weight: bold;
+  color: #e4572f;
+}
+
+/* ===== ボタン ===== */
+button {
+  font: inherit;
+  min-height: 48px;          /* 指で押しやすい高さ */
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  touch-action: manipulation; /* ダブルタップで拡大されないようにする */
+}
+
+button:active {
+  transform: scale(0.97);    /* 押したときに少し小さくして「押した感」を出す */
+}
+
+.primary {
+  min-width: 160px;
+  background: #2f6fe4;
+  color: #fff;
+  font-weight: bold;
+  padding: 0 20px;
+}

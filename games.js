@@ -15,4 +15,10 @@ const GAMES = [
     description: 'コンピューターが決めた数を、ヒントをたよりに当てよう。難易度は3段階。',
     path: 'number-guess/index.html',
   },
+  {
+    icon: '☄️',
+    title: 'よけるゲーム',
+    description: '上から落ちてくるものを左右に動いてよけよう。長く生き残るほど高得点！',
+    path: 'dodge/index.html',
+  },
 ];
