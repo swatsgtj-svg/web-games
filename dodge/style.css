@@ -196,3 +196,166 @@ button:active {
   font-weight: bold;
   padding: 0 20px;
 }
+
+/* スタート画面の「AIの練習を見る」ボタン（白地に青い文字） */
+.secondary {
+  min-width: 160px;
+  padding: 0 20px;
+  background: #fff;
+  color: #2f6fe4;
+  font-weight: bold;
+  box-shadow: inset 0 0 0 2px #2f6fe4; /* 内側に線を引いてふちどりにする */
+}
+
+.ai-note {
+  margin: 0;
+  color: #5b6b82;
+  font-size: 0.85rem;
+}
+
+/* ===== AIモード ===== */
+/* AIモードでは、パネルが入るように画面のスクロールを許す */
+body.ai-mode {
+  overflow: auto;
+}
+
+body.ai-mode .card {
+  height: auto;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* ゲーム画面の高さ：画面の高さの半分くらい（小さすぎ・大きすぎにならないように範囲を決める） */
+body.ai-mode .stage {
+  flex: none;
+  height: clamp(240px, 52dvh, 520px);
+}
+
+/* AIモードではゲーム画面をさわってもスクロールできるようにする */
+body.ai-mode #game {
+  touch-action: pan-y;
+}
+
+.ai-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* ボタンを横に並べる。入りきらないときは次の行に折り返す（flex-wrap） */
+.speed-buttons,
+.ai-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.speed-buttons button,
+.ai-actions button {
+  flex: 1 1 0;
+  min-height: 44px;
+  padding: 0 8px;
+  background: #fff;
+  color: #1f2a3c;
+  font-size: 0.95rem;
+  box-shadow: 0 1px 4px rgba(31, 42, 60, 0.15);
+  white-space: nowrap;
+}
+
+/* 選ばれている（押されている）ボタンは青くする */
+.speed-buttons button[aria-pressed="true"],
+.test-button[aria-pressed="true"] {
+  background: #2f6fe4;
+  color: #fff;
+  font-weight: bold;
+}
+
+.ai-actions .test-button {
+  flex-basis: 100%;            /* 本番モードボタンは1行まるごと使って目立たせる */
+  background: #27a96b;
+  color: #fff;
+  font-weight: bold;
+}
+
+/* 練習の数字。横を6つに区切り、ふつうの箱は2つ分（1行に3個）、
+   .wide の箱は3つ分（1行に2個）の幅を使う */
+.ai-stats {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+  margin: 0;
+}
+
+.ai-stats div {
+  grid-column: span 2;
+  min-width: 0;
+  padding: 4px 8px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(31, 42, 60, 0.12);
+  text-align: center;
+}
+
+.ai-stats div.wide {
+  grid-column: span 3;
+}
+
+.ai-stats dt {
+  white-space: nowrap;
+  color: #5b6b82;
+  font-size: 0.75rem;
+}
+
+.ai-stats dd {
+  margin: 0;
+  font-weight: bold;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 本番の記録。本番モード中は緑のふちどりで目立たせる */
+.test-stats {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.test-stats div {
+  grid-column: auto;
+  padding: 4px 2px;            /* 4つ並ぶので、左右の余白を少なくする */
+}
+
+.test-stats dd {
+  white-space: nowrap;         /* 「2428回」の「回」だけ次の行に行かないようにする */
+  font-size: 0.95rem;
+}
+
+.test-stats.active div {
+  box-shadow: inset 0 0 0 2px #27a96b;
+}
+
+.test-title dt {
+  color: #27a96b;
+  font-weight: bold;
+}
+
+/* 成長グラフの入れもの */
+.chart-box {
+  height: 130px;
+  padding: 6px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(31, 42, 60, 0.12);
+}
+
+#ai-chart {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.ai-message {
+  min-height: 1.4em;
+  margin: 0;
+  color: #27a96b;
+  font-size: 0.9rem;
+  text-align: center;
+}
